@@ -1,18 +1,19 @@
 const { 
   client,
   getAllUsers,
-  createUser
+  createUser,
+  updateUser
 } = require('./index');
+
+const { users } = require('./seedData');
 
 const createInitialUsers = async () => {
   try {
     console.log("Starting to create users...");
 
-    const albert = await createUser({ username: 'albert', password: 'bertie99' });
-    const sandra = await createUser({ username: 'sandra', password: '2sandy4me' });
-    const glamgal = await createUser({ username: 'glamgal', password: 'soglam' });
+    const newUsers = await Promise.all(users.map(createUser))
 
-    console.log(albert);
+    console.log(newUsers);
 
     console.log("Finished creating users!");
   } catch(error) {
@@ -24,6 +25,7 @@ const createInitialUsers = async () => {
 const dropTables = async () => {
   try {
     await client.query(`
+    DROP TABLE IF EXISTS posts;
     DROP TABLE IF EXISTS users;
     `)
   } catch (error) {
@@ -37,8 +39,19 @@ const createTables = async () => {
       CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         username varchar(255) UNIQUE NOT NULL,
-        password varchar(255) NOT NULL
-      ); 
+        password varchar(255) NOT NULL,
+        name varchar(255) NOT NULL,
+        location varchar(255) NOT NULL,
+        active BOOLEAN DEFAULT true
+      );
+      
+      CREATE TABLE posts (
+        id SERIAL PRIMARY KEY,
+        "authorId" INTEGER REFERENCES users(id) NOT NULL,
+        title varchar(255) NOT NULL,
+        content TEXT NOT NULL,
+        active BOOLEAN DEFAULT true
+      );
     `)
   } catch (error) {
     throw error;
@@ -62,8 +75,16 @@ const testDB = async () => {
   try {
     console.log("Starting to test database...");
 
-    const users = await getAllUsers();
-    console.log("getAllUsers:", users);
+    console.log('Calling getAllUsers')
+    const allUsers = await getAllUsers();
+    console.log("Result:", users);
+
+    console.log('Calling updateUser on users[0]');
+    const updateUserResult = await updateUser(allUsers[0].id, {
+      name: 'Newname Sogood',
+      location: 'Lesterville, KY'
+    });
+    console.log('Result:', updateUserResult);
 
     console.log("Finished database tests!");
   } catch (err) {
