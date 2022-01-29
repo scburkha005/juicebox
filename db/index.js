@@ -1,15 +1,32 @@
 const { Client } = require('pg');
+const { rows } = require('pg/lib/defaults');
 
 
 const client = new Client('postgres://localhost:5433/juicebox-dev');
 
 const getAllUsers = async () => {
-  const { rows: users } = await client.query(
-    `SELECT *
-    FROM users;
-    `);
+  try {
+    const { rows: users } = await client.query(
+      `SELECT *
+      FROM users;
+      `);
 
-  return users;
+    return users;
+  } catch (err) {
+    throw err;
+  }
+}
+
+const getAllPosts = async () => {
+  try {
+    const { rows: posts } = await client.query(
+      `SELECT *
+      FROM posts;`
+    );
+    return posts;
+  } catch (err) {
+    throw err;
+  }
 }
 
 const createUser = async ({ username, password, name, location }) => {
@@ -26,33 +43,23 @@ const createUser = async ({ username, password, name, location }) => {
   }
 }
 
-// fields = {
-//   username: *,
-//   password: *,
-//   location: *,
-//   name: *,
-//   active: false
-// }
+const createPost = async ({authorId, title, content}) => {
+  try {
+    const { rows: [post] } = await client.query(`
+      INSERT INTO posts("authorId", title, content)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `, [authorId, title, content])
+    return post;
+  } catch (err) {
+    throw err;
+  }
+}
 
-// updateUser(somenumber, {name: scott location: bayarea}) "firstName"
 async function updateUser(id, fields = {}) {
-  // build the set string
-  //Object.keys = [name, location]
-  //[name, location].map((objectKey, index)
-  //   return (
-  //  `"${objectKey}" = $ ${index + 1}`
-  //    `"name" = $ 1 + 0`
-  //    `"location" = $ 2
-  //)
-  //)
-  // ====> [`"name" = $1`, `"location"= $2`].join(', ');
-  //
-  //  setString = ` "name" = $1, "location" = $2 `
   const setString = Object.keys(fields).map(
     (key, index) => `"${ key }"=$${ index + 1 }`
   ).join(', ');
-
-  // setString = "name"='new name', "location"='new location'
 
   // return early if this is called without fields
   if (setString.length === 0) {
@@ -66,12 +73,65 @@ async function updateUser(id, fields = {}) {
       WHERE id=${ id }
       RETURNING *;
     `, Object.values(fields));
-    //{name: scott, location: bayarea}
-    //Object.values => [scott, bayarea]
 
     return updatedUser;
   } catch (error) {
     throw error;
+  }
+};
+
+const updatePost = async (id, fields = {}) => {
+  const setString = Object.keys(fields).map(
+    (key, index) => `"${ key }"=$${ index + 1 }`
+  ).join(', ');
+
+  if (setString.length === 0) {
+    return;
+  }
+
+  try {
+    const {rows: [updatedPost]} = await client.query(`
+      UPDATE posts
+      SET ${ setString }
+      WHERE id=${ id }
+      RETURNING *;
+    `, Object.values(fields));
+    
+    return updatedPost;
+  } catch (error) {
+    throw error;
+  }
+}
+
+const getPostsByUser = async (userId) => {
+  try {
+    const { rows: posts } = await client.query(`
+      SELECT * FROM posts
+      WHERE "authorId" = $1;
+    `, [userId]);
+
+    return posts;
+  } catch (err) {
+    throw err;
+  }
+}
+
+const getUserById = async (userId) => {
+  try {
+    const {rows: [user]} = await client.query(`
+      SELECT * FROM users
+      WHERE id = $1;
+    `, [userId]);
+
+    // if (!data.rows) {
+    //   return;
+    // }
+    const userPosts = await getPostsByUser(userId);
+    const userWithPosts = {...user, userPosts};
+
+    return userWithPosts;
+  } catch (err) {
+    throw err;
   }
 }
 
@@ -79,5 +139,9 @@ module.exports = {
   client,
   getAllUsers,
   createUser,
-  updateUser
+  updateUser,
+  getAllPosts,
+  createPost,
+  updatePost,
+  getUserById
 }

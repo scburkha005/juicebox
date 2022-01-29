@@ -2,7 +2,11 @@ const {
   client,
   getAllUsers,
   createUser,
-  updateUser
+  updateUser,
+  getAllPosts,
+  createPost,
+  updatePost,
+  getUserById
 } = require('./index');
 
 const { users } = require('./seedData');
@@ -19,6 +23,44 @@ const createInitialUsers = async () => {
   } catch(error) {
     console.error("Error creating users!");
     throw error;
+  }
+}
+
+const createInitialPosts = async () => {
+  try {
+    console.log('Starting to create posts...')
+
+    const [albert, sandra, glamgal] = await getAllUsers();
+
+    const newPosts = await createPost({
+      authorId: albert.id,
+      title: "First Post",
+      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
+    })
+
+    await createPost({
+      authorId: albert.id,
+      title: "Second Post",
+      content: "This is my second post. Won't write another"
+    })
+
+    await createPost({
+      authorId: sandra.id,
+      title: "First Post",
+      content: "This is my first post as Sandra. Won't write another"
+    })
+
+    await createPost({
+      authorId: glamgal.id,
+      title: "First Post",
+      content: "Glamgal here. This is my first post. Won't write another"
+    })
+
+    console.log(newPosts);
+
+    console.log('Finished creating posts!')
+  } catch (err) {
+    throw err;
   }
 }
 
@@ -66,6 +108,7 @@ const rebuildDB = async () => {
     await dropTables();
     await createTables();
     await createInitialUsers();
+    await createInitialPosts();
   } catch (error) {
     console.error(error);
   }
@@ -85,6 +128,21 @@ const testDB = async () => {
       location: 'Lesterville, KY'
     });
     console.log('Result:', updateUserResult);
+
+    console.log('Calling getAllPosts');
+    const posts = await getAllPosts();
+    console.log("Result:", posts);
+
+    console.log('Calling updatePost on posts[0]');
+    const updatePostResult = await updatePost(posts[0].id, {
+      title: "New Title",
+      content: "Updated Content"
+    });
+    console.log('Result:', updatePostResult);
+
+    console.log('Calling getUserById with 1');
+    const albert = await getUserById(1);
+    console.log("Result:", albert);
 
     console.log("Finished database tests!");
   } catch (err) {
