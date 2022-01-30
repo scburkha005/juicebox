@@ -179,7 +179,7 @@ const updatePost = async (postId, fields = {}) => {
 
   try {
     if (setString.length > 0) {
-      const {rows: [updatedPost]} = await client.query(`
+      await client.query(`
         UPDATE posts
         SET ${ setString }
         WHERE id=${ postId }
@@ -194,9 +194,33 @@ const updatePost = async (postId, fields = {}) => {
 
     //create new tags
     const tagList = await Promise.all(tags.map(createTag));
-    console.log(tagList)
+    const tagListIdString = tagList.map(
+      tag => `${ tag.id }`
+    ).join(', ');
+
+    //delete post_tags according to updated post
+    await client.query(`
+      DELETE FROM post_tags
+      WHERE "postId" = $1
+      AND "tagId" NOT IN (${tagListIdString});
+    `, [postId]);
+    //grab duplicate tags
+    const { rows: duplicateTags } = await client.query(`
+      SELECT * FROM post_tags
+      WHERE "postId" = $1;
+    `, [postId]);
+    //remove duplicate from list to avoid unique constraint on post_tags adding
+    const newTagList = tagList.filter((tag) => {
+      for (let i = 0; i < duplicateTags.length; i++) {
+        if (tag.id !== duplicateTags[i].tagId) {
+          return true;
+        }
+      }
+    })
+
+    await addTagsToPost(postId, newTagList);
     
-    return tagList;
+    return await getPostById(postId, tagList)
   } catch (error) {
     throw error;
   }
