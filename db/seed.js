@@ -146,6 +146,13 @@ const testDB = async () => {
     const post3 = await getPostById(3);
     console.log('Posts', post1, post2, post3)
 
+    //test updating tags
+    console.log('Calling updatePost on posts[1], only updating tags');
+    const updatePostTagsResult = await updatePost(posts[1].id, {
+      tags: ['#youcandoanything', '#redfish', '#nofish']
+    })
+    console.log('Result:', updatePostTagsResult);
+
     console.log("Finished database tests!");
   } catch (err) {
     console.error("Error testing database!");

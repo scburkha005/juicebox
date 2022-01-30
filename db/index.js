@@ -62,16 +62,24 @@ const createPost = async ({id, title, content, tags}) => {
   }
 }
 
-const createTag = async (tags) => {
+const createTag = async (tag) => {
   try {
-    const { rows: [tag] } = await client.query(`
+    const { rows: [newTag] } = await client.query(`
       INSERT INTO tags(name)
       VALUES ($1)
       ON CONFLICT (name) DO NOTHING
       RETURNING *;
-    `, [tags])
+    `, [tag])
+    //If tag already exists, query for it and return it
+    if (newTag === undefined) {
+      const { rows: [oldTag] } = await client.query(`
+        SELECT * from tags
+        WHERE name = $1; 
+      `, [tag])
+      return oldTag
+    }
 
-    return tag;
+    return newTag;
   } catch (err) {
     throw err;
   }
@@ -160,24 +168,35 @@ async function updateUser(id, fields = {}) {
   }
 };
 
-const updatePost = async (id, fields = {}) => {
+const updatePost = async (postId, fields = {}) => {
+  //remove tags from the object and save for later
+  const { tags } = fields;
+  delete fields.tags;
+  //update post content/title logic
   const setString = Object.keys(fields).map(
     (key, index) => `"${ key }"=$${ index + 1 }`
   ).join(', ');
 
-  if (setString.length === 0) {
-    return;
-  }
-
   try {
-    const {rows: [updatedPost]} = await client.query(`
-      UPDATE posts
-      SET ${ setString }
-      WHERE id=${ id }
-      RETURNING *;
-    `, Object.values(fields));
+    if (setString.length > 0) {
+      const {rows: [updatedPost]} = await client.query(`
+        UPDATE posts
+        SET ${ setString }
+        WHERE id=${ postId }
+        RETURNING *;
+      `, Object.values(fields));
+    }
+
+    // return if no tags to update
+    if (tags === undefined) {
+      return await getPostById(postId);
+    }
+
+    //create new tags
+    const tagList = await Promise.all(tags.map(createTag));
+    console.log(tagList)
     
-    return updatedPost;
+    return tagList;
   } catch (error) {
     throw error;
   }
