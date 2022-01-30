@@ -43,13 +43,13 @@ const createUser = async ({ username, password, name, location }) => {
   }
 }
 
-const createPost = async ({authorId, title, content}) => {
+const createPost = async ({id, title, content}) => {
   try {
     const { rows: [post] } = await client.query(`
       INSERT INTO posts("authorId", title, content)
       VALUES ($1, $2, $3)
       RETURNING *;
-    `, [authorId, title, content])
+    `, [id, title, content])
     return post;
   } catch (err) {
     throw err;

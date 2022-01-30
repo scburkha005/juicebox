@@ -9,7 +9,7 @@ const {
   getUserById
 } = require('./index');
 
-const { users } = require('./seedData');
+const { users, posts } = require('./seedData');
 
 const createInitialUsers = async () => {
   try {
@@ -30,34 +30,9 @@ const createInitialPosts = async () => {
   try {
     console.log('Starting to create posts...')
 
-    const [albert, sandra, glamgal] = await getAllUsers();
-
-    const newPosts = await createPost({
-      authorId: albert.id,
-      title: "First Post",
-      content: "This is my first post. I hope I love writing blogs as much as I love writing them."
-    })
-
-    await createPost({
-      authorId: albert.id,
-      title: "Second Post",
-      content: "This is my second post. Won't write another"
-    })
-
-    await createPost({
-      authorId: sandra.id,
-      title: "First Post",
-      content: "This is my first post as Sandra. Won't write another"
-    })
-
-    await createPost({
-      authorId: glamgal.id,
-      title: "First Post",
-      content: "Glamgal here. This is my first post. Won't write another"
-    })
+    const newPosts = await Promise.all(posts.map(createPost));
 
     console.log(newPosts);
-
     console.log('Finished creating posts!')
   } catch (err) {
     throw err;
