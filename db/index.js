@@ -19,10 +19,12 @@ const getAllUsers = async () => {
 
 const getAllPosts = async () => {
   try {
-    const { rows: posts } = await client.query(
-      `SELECT *
+    const { rows: postIds } = await client.query(
+      `SELECT id
       FROM posts;`
     );
+
+    const posts = await Promise.all(postIds.map(post => getPostById(post.id)));
     return posts;
   } catch (err) {
     throw err;
@@ -43,14 +45,92 @@ const createUser = async ({ username, password, name, location }) => {
   }
 }
 
-const createPost = async ({id, title, content}) => {
+const createPost = async ({id, title, content, tags}) => {
   try {
     const { rows: [post] } = await client.query(`
       INSERT INTO posts("authorId", title, content)
       VALUES ($1, $2, $3)
       RETURNING *;
     `, [id, title, content])
-    return post;
+    //create new tags if they don't exist
+    const tagList = await Promise.all(tags.map(createTag));
+    console.log(tagList)
+    //returns post w all information added
+    return await addTagsToPost(post.id, tagList)
+  } catch (err) {
+    throw err;
+  }
+}
+
+const createTag = async (tags) => {
+  try {
+    const { rows: [tag] } = await client.query(`
+      INSERT INTO tags(name)
+      VALUES ($1)
+      ON CONFLICT (name) DO NOTHING
+      RETURNING *;
+    `, [tags])
+
+    return tag;
+  } catch (err) {
+    throw err;
+  }
+}
+//Helper function for addTagsToPost, adds a single tag to a single post
+const createPostTag = async (postId, tagId) => {
+  try {
+    const { rows: [postTag] } = await client.query(`
+      INSERT INTO post_tags("postId", "tagId")
+      VALUES ($1, $2)
+      RETURNING *;
+    `, [postId, tagId])
+    return postTag;
+  } catch (err) {
+    throw err;
+  }
+}
+
+const addTagsToPost = async (postId, tagArray) => {
+  try {
+    //Add all tags to single post using tagArray
+    await Promise.all(tagArray.map((tag) => {
+      if (!tag) {
+        return;
+      }
+      createPostTag(postId, tag.id
+    )}))
+
+    return await getPostById(postId)
+  } catch (err) {
+    throw err;
+  }
+}
+//called inside addTagsToPost, returns a single post object containing tags, author, and other post information
+const getPostById = async (postId) => {
+  try {
+    const { rows: [post] } = await client.query(`
+      SELECT * FROM posts
+      WHERE id = $1; 
+    `, [postId]);
+
+    const { rows: tags } = await client.query(`
+      SELECT tags.* FROM tags
+      JOIN post_tags ON tags.id = post_tags."tagId"
+      WHERE "postId" = $1;
+    `, [postId]);
+
+    const { rows: [author] } = await client.query(`
+      SELECT id, username, name, location
+      FROM users
+      WHERE id = $1;
+    `, [post.authorId]);
+
+    
+    const newPost = {...post, tags, author};
+
+    delete newPost.authorId;
+
+    return newPost;
   } catch (err) {
     throw err;
   }
@@ -102,13 +182,16 @@ const updatePost = async (id, fields = {}) => {
     throw error;
   }
 }
-
+//helper function for getUserById
 const getPostsByUser = async (userId) => {
   try {
-    const { rows: posts } = await client.query(`
-      SELECT * FROM posts
+    const { rows: postIds } = await client.query(`
+      SELECT id
+      FROM posts
       WHERE "authorId" = $1;
     `, [userId]);
+
+    const posts = await Promise.all(postIds.map(post => getPostById(post.id)))
 
     return posts;
   } catch (err) {
@@ -143,5 +226,8 @@ module.exports = {
   getAllPosts,
   createPost,
   updatePost,
-  getUserById
+  getUserById,
+  createTag,
+  addTagsToPost,
+  getPostById
 }

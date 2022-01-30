@@ -5,13 +5,20 @@ const users = [
 ]
 
 const posts = [
-  {title: 'First Post', content: "This is my first post. I hope I love writing blogs as much as I love writing them.", id: 1},
-  {title: 'Second Post', content: "This is my second post. Won't write another", id: 1},
-  {title: 'First Post', content: "This is my first post as Sandra. I'm only writing one.", id: 2},
-  {title: "First Post", content: "Glamgal here. This is my first post. I dont wanna write anymore", id: 3}
+  {title: 'First Post', content: "This is my first post. I hope I love writing blogs as much as I love writing them.", id: 1, tags: ['#happy', '#youcandoanything']},
+  {title: 'Second Post', content: "This is my second post. Won't write another", id: 1, tags: ['#happy', '#worst-day-ever']},
+  {title: 'First Post', content: "This is my first post as Sandra. I'm only writing one.", id: 2, tags: ['#happy', '#canmandoeverything']},
+  {title: "First Post", content: "Glamgal here. This is my first post. I dont wanna write anymore", id: 3, tags: ['#definitelynobugs']}
+]
+
+const tags = [
+  {tags: '#tag'},
+  {tags: '#othertag'},
+  {tags: '#moretag'}
 ]
 
 module.exports = {
   users,
-  posts
+  posts,
+  tags
 }

@@ -6,17 +6,19 @@ const {
   getAllPosts,
   createPost,
   updatePost,
-  getUserById
+  getUserById,
+  createTag,
+  addTagsToPost,
+  getPostById
 } = require('./index');
 
-const { users, posts } = require('./seedData');
+const { users, posts, tags } = require('./seedData');
 
 const createInitialUsers = async () => {
   try {
     console.log("Starting to create users...");
 
     const newUsers = await Promise.all(users.map(createUser))
-
     console.log(newUsers);
 
     console.log("Finished creating users!");
@@ -31,8 +33,8 @@ const createInitialPosts = async () => {
     console.log('Starting to create posts...')
 
     const newPosts = await Promise.all(posts.map(createPost));
-
     console.log(newPosts);
+
     console.log('Finished creating posts!')
   } catch (err) {
     throw err;
@@ -42,6 +44,8 @@ const createInitialPosts = async () => {
 const dropTables = async () => {
   try {
     await client.query(`
+    DROP TABLE IF EXISTS post_tags;
+    DROP TABLE IF EXISTS tags;
     DROP TABLE IF EXISTS posts;
     DROP TABLE IF EXISTS users;
     `)
@@ -69,6 +73,17 @@ const createTables = async () => {
         content TEXT NOT NULL,
         active BOOLEAN DEFAULT true
       );
+
+      CREATE TABLE tags (
+        id SERIAL PRIMARY KEY,
+        name varchar(255) UNIQUE NOT NULL
+      );
+
+      CREATE TABLE post_tags (
+        "postId" INTEGER REFERENCES posts(id),
+        "tagId" INTEGER REFERENCES tags(id),
+        UNIQUE ("postId", "tagId")
+      );
     `)
   } catch (error) {
     throw error;
@@ -93,10 +108,12 @@ const testDB = async () => {
   try {
     console.log("Starting to test database...");
 
+    //Grab all users in the users table
     console.log('Calling getAllUsers')
     const allUsers = await getAllUsers();
     console.log("Result:", users);
 
+    //Check update user functionality
     console.log('Calling updateUser on users[0]');
     const updateUserResult = await updateUser(allUsers[0].id, {
       name: 'Newname Sogood',
@@ -104,10 +121,12 @@ const testDB = async () => {
     });
     console.log('Result:', updateUserResult);
 
+    //Grab all posts in the posts table
     console.log('Calling getAllPosts');
     const posts = await getAllPosts();
     console.log("Result:", posts);
 
+    //Check update posts functionality
     console.log('Calling updatePost on posts[0]');
     const updatePostResult = await updatePost(posts[0].id, {
       title: "New Title",
@@ -115,9 +134,17 @@ const testDB = async () => {
     });
     console.log('Result:', updatePostResult);
 
+    //Check getting single user from table by ID, should include posts array
     console.log('Calling getUserById with 1');
     const albert = await getUserById(1);
     console.log("Result:", albert);
+    
+    //Grab post by id
+    console.log('Grabbing a few posts w tags');
+    const post1 = await getPostById(1);
+    const post2 = await getPostById(2);
+    const post3 = await getPostById(3);
+    console.log('Posts', post1, post2, post3)
 
     console.log("Finished database tests!");
   } catch (err) {
