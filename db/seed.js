@@ -7,11 +7,10 @@ const {
   createPost,
   updatePost,
   getUserById,
-  getPostById,
   getPostsByTagName
 } = require('./index');
 
-const { users, posts, tags } = require('./seedData');
+const { users, posts } = require('./seedData');
 
 const createInitialUsers = async () => {
   try {
@@ -138,13 +137,6 @@ const testDB = async () => {
     const albert = await getUserById(1);
     console.log("Result:", albert);
     
-    //Grab post by id
-    console.log('Grabbing a few posts w tags');
-    const post1 = await getPostById(1);
-    const post2 = await getPostById(2);
-    const post3 = await getPostById(3);
-    console.log('Posts', post1, post2, post3)
-
     //test updating tags
     console.log('Calling updatePost on posts[1], only updating tags');
     const updatePostTagsResult = await updatePost(posts[1].id, {

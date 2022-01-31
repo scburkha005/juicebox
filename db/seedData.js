@@ -11,14 +11,7 @@ const posts = [
   {title: "First Post", content: "Glamgal here. This is my first post. I dont wanna write anymore", id: 3, tags: ['#definitelynobugs']}
 ]
 
-const tags = [
-  {tags: '#tag'},
-  {tags: '#othertag'},
-  {tags: '#moretag'}
-]
-
 module.exports = {
   users,
-  posts,
-  tags
+  posts
 }

@@ -1,7 +1,4 @@
 const { Client } = require('pg');
-const { rows } = require('pg/lib/defaults');
-
-
 const client = new Client('postgres://localhost:5433/juicebox-dev');
 
 const getAllUsers = async () => {
@@ -45,23 +42,7 @@ const createUser = async ({ username, password, name, location }) => {
   }
 }
 
-const createPost = async ({id, title, content, tags}) => {
-  try {
-    const { rows: [post] } = await client.query(`
-      INSERT INTO posts("authorId", title, content)
-      VALUES ($1, $2, $3)
-      RETURNING *;
-    `, [id, title, content])
-    //create new tags if they don't exist
-    const tagList = await Promise.all(tags.map(createTag));
-    console.log(tagList)
-    //returns post w all information added
-    return await addTagsToPost(post.id, tagList)
-  } catch (err) {
-    throw err;
-  }
-}
-
+//Helper function - createPost and updatePost
 const createTag = async (tag) => {
   try {
     const { rows: [newTag] } = await client.query(`
@@ -84,7 +65,8 @@ const createTag = async (tag) => {
     throw err;
   }
 }
-//Helper function for addTagsToPost, adds a single tag to a single post
+
+//Helper function for addTagsToPost, inserts data into our through table, postid tagid relation
 const createPostTag = async (postId, tagId) => {
   try {
     const { rows: [postTag] } = await client.query(`
@@ -98,6 +80,7 @@ const createPostTag = async (postId, tagId) => {
   }
 }
 
+//helper function - createPost and updatePost
 const addTagsToPost = async (postId, tagArray) => {
   try {
     //Add all tags to single post using tagArray
@@ -105,15 +88,33 @@ const addTagsToPost = async (postId, tagArray) => {
       if (!tag) {
         return;
       }
-      createPostTag(postId, tag.id
-    )}))
+      createPostTag(postId, tag.id)
+    }))
 
     return await getPostById(postId)
   } catch (err) {
     throw err;
   }
 }
-//called inside addTagsToPost, returns a single post object containing tags, author, and other post information
+
+//Used to initialize our post table information
+const createPost = async ({id, title, content, tags}) => {
+  try {
+    const { rows: [post] } = await client.query(`
+      INSERT INTO posts("authorId", title, content)
+      VALUES ($1, $2, $3)
+      RETURNING *;
+    `, [id, title, content])
+    //create new tags if they don't exist
+    const tagList = await Promise.all(tags.map(createTag));
+    //returns post w all information added
+    return await addTagsToPost(post.id, tagList)
+  } catch (err) {
+    throw err;
+  }
+}
+
+//helper function used to grab information from multiple tables and combine into a single post object containing tags, author, and other post information
 const getPostById = async (postId) => {
   try {
     const { rows: [post] } = await client.query(`
@@ -144,7 +145,7 @@ const getPostById = async (postId) => {
   }
 }
 
-async function updateUser(id, fields = {}) {
+const updateUser = async (id, fields = {}) => {
   const setString = Object.keys(fields).map(
     (key, index) => `"${ key }"=$${ index + 1 }`
   ).join(', ');
@@ -225,6 +226,7 @@ const updatePost = async (postId, fields = {}) => {
     throw error;
   }
 }
+
 //helper function for getUserById
 const getPostsByUser = async (userId) => {
   try {
@@ -248,10 +250,10 @@ const getUserById = async (userId) => {
       SELECT * FROM users
       WHERE id = $1;
     `, [userId]);
+    if (!user) {
+      return;
+    }
 
-    // if (!data.rows) {
-    //   return;
-    // }
     const userPosts = await getPostsByUser(userId);
     const userWithPosts = {...user, userPosts};
 
@@ -286,6 +288,5 @@ module.exports = {
   createPost,
   updatePost,
   getUserById,
-  getPostById,
   getPostsByTagName
 }
