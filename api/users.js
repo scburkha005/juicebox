@@ -17,4 +17,9 @@ router.get('/', async (req, res, next) => {
   })
 })
 
+// POST api/users/login
+router.post('/login', async (req, res, next) => {
+  console.log(req.body)
+  res.end();
+})
 module.exports = router;
