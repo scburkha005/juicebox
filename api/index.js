@@ -10,7 +10,7 @@ const { JWT_SECRET } = process.env;
 //Authorization
 router.use(async (req, res, next) => {
   const prefix = 'Bearer '
-  const auth = req.headers['authorization'];
+  const auth = req.header('Authorization')
 
   if (!auth) {
     next();
@@ -20,18 +20,31 @@ router.use(async (req, res, next) => {
     // [Bearer, tpoisdj.pdsoifj.asdpoifap]
     const [ , token] = auth.split(' ');
     try {
+      console.log(token)
       const { id } = jwt.verify(token, JWT_SECRET)
+      console.log('id', id)
 
-      const user = await getUserById(id);
-      console.log(user)
-
-      req.user = user;
-
-      next();
-    } catch(err) {
-      throw err;
+      if (id) {
+        req.user = await getUserById(id);
+        next();
+      }
+    } catch({ name, message }) {
+      next({ name, message });
     }
+  } else {
+    next({
+      name: 'AuthorizationHeaderError',
+      message: `Authorization token must start with ${prefix}`
+    })
   }
+})
+
+router.use((req, res, next) => {
+  if (req.user) {
+    console.log("User is set:", req.user);
+  }
+
+  next();
 })
 
 // PATH /api/users
@@ -39,5 +52,12 @@ router.use('/users', require('./users'));
 router.use('/posts', require('./posts'));
 router.use('/tags', require('./tags'));
 
+//Error handling
+router.use(({ name, message }, req, res, next) => {
+  res.send({
+    name,
+    message
+  });
+});
 
 module.exports = router;

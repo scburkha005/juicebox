@@ -267,10 +267,10 @@ const getUserById = async (userId) => {
       return;
     }
 
-    const userPosts = await getPostsByUser(userId);
-    const userWithPosts = {...user, userPosts};
+    user.posts = await getPostsByUser(userId);
+    // const userWithPosts = {...user, userPosts};
 
-    return userWithPosts;
+    return user;
   } catch (err) {
     throw err;
   }
@@ -292,6 +292,19 @@ const getPostsByTagName = async (tagName) => {
   }
 }
 
+const getUserByUsername = async (username) => {
+  try {
+    const { rows: [user] } = await client.query(`
+      SELECT * FROM users
+      WHERE username = $1;
+    `, [username]);
+
+    return user;
+  } catch (err) {
+    throw err;
+  }
+}
+
 module.exports = {
   client,
   getAllUsers,
@@ -302,5 +315,6 @@ module.exports = {
   updatePost,
   getUserById,
   getPostsByTagName,
-  getAllTags
+  getAllTags,
+  getUserByUsername
 }
