@@ -4,7 +4,7 @@ const client = new Client('postgres://localhost:5433/juicebox-dev');
 const getAllUsers = async () => {
   try {
     const { rows: users } = await client.query(
-      `SELECT *
+      `SELECT name, username, id, active, location
       FROM users;
       `);
 

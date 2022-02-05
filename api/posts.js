@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getAllPosts, createPost, updatePost, getPostById } = require('../db')
-const { requireUser } = require('./utils');
+const { requireActiveUser } = require('./utils');
 
 router.use((req, res, next) => {
   console.log("A request is being made to /posts");
@@ -14,8 +14,10 @@ router.get('/', async (req, res, next) => {
   const allPosts = await getAllPosts();
 
   //posts will only contain posts where post.active is true
+  // account active => deactivate a post => post.author.active = true && post.active = false
+  // account deactivated => post is still active => post.author.active = false && post.active = true
   const posts = allPosts.filter(post => {
-    return post.active || (req.user && post.author.id === req.user.id);
+    return (post.author.active && post.active) || (req.user && post.author.id === req.user.id);
   });
 
   res.send({
@@ -24,7 +26,7 @@ router.get('/', async (req, res, next) => {
 });
 
 //POST /api/posts
-router.post('/', requireUser, async(req, res, next) => {
+router.post('/', requireActiveUser, async(req, res, next) => {
   const { title, content, tags = '' } = req.body;
   if (!title || !content) {
     next({
@@ -56,7 +58,7 @@ router.post('/', requireUser, async(req, res, next) => {
 })
 
 // PATCH /api/posts/:postId
-router.patch('/:postId', requireUser, async (req, res, next) => {
+router.patch('/:postId', requireActiveUser, async (req, res, next) => {
   const { postId } = req.params;
   const { title, content, tags } = req.body;
 
@@ -93,7 +95,7 @@ router.patch('/:postId', requireUser, async (req, res, next) => {
 });
 
 //DELETE /api/posts/:postId
-router.delete('/:postId', requireUser, async (req, res, next) => {
+router.delete('/:postId', requireActiveUser, async (req, res, next) => {
   try {
     const post = await getPostById(req.params.postId);
 

@@ -27,7 +27,7 @@ router.get('/:tagName/posts', async (req, res, next) => {
     const postsContainTag = await getPostsByTagName(tagName);
     // posts => active = true OR where you are the author of post
     const posts = postsContainTag.filter(post => {
-      return post.active || (req.user && post.author.id === req.user.id);
+      return (post.author.active && post.active) || (req.user && post.author.id === req.user.id);
     });
     res.send({ posts });
   } catch ({ name, message }) {

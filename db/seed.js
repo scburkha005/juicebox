@@ -91,7 +91,7 @@ const createTables = async () => {
 
 const rebuildDB = async () => {
   try {
-    // client.connect();
+    client.connect();
 
     await dropTables();
     await createTables();
@@ -158,4 +158,4 @@ const testDB = async () => {
 rebuildDB()
   .then(testDB)
   .catch(console.error)
-  // .finally(() => client.end());
+  .finally(() => client.end());

@@ -94,17 +94,21 @@ router.delete('/:userId', requireUser, async (req, res, next) => {
   try {
     const user = await getUserById(userId);
     
-    if (user && user.id === req.user.id) {
-      const updatedUser = await updateUser(user.id, { active: false });
-      res.send({ user: updatedUser });
+    if (!user) {
+      next({
+        name: "UserNotFound",
+        message: "User does not exist"
+      });
+    } else if (user.id !== req.user.id) {
+      next({
+        name: "UnauthorizedUser",
+        message: "Forbidden user action - can't deactivate another user"
+      });
+    } else {
+        const updatedUser = await updateUser(user.id, { active: false });
+        res.send({ user: updatedUser });
+
     }
-    next(user ? {
-      name: "UnauthorizedUser",
-      message: "Forbidden user action - can't deactivate another user"
-    } : {
-      name: "UserNotFound",
-      message: "User does not exist"
-    })
   } catch ({ name, message }) {
     next({ name, message });
   }
