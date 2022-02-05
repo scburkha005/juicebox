@@ -158,12 +158,11 @@ const getPostById = async (postId) => {
     `, [postId]);
 
     const { rows: [author] } = await client.query(`
-      SELECT id, username, name, location
+      SELECT id, username, name, location, active
       FROM users
       WHERE id = $1;
     `, [post.authorId]);
 
-    
     const newPost = {...post, tags, author};
 
     delete newPost.authorId;

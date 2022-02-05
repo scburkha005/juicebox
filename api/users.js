@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, getUserByUsername, createUser } = require('../db')
+const { getAllUsers, getUserByUsername, createUser, getUserById, updateUser } = require('../db')
 const jwt = require('jsonwebtoken');
+const { requireUser } = require('./utils');
 
 const { JWT_SECRET } = process.env;
 
@@ -86,5 +87,27 @@ router.post('/register', async (req, res, next) => {
     next({ name, message });
   }
 })
+
+// DELETE /api/users/:userId
+router.delete('/:userId', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    const user = await getUserById(userId);
+    
+    if (user && user.id === req.user.id) {
+      const updatedUser = await updateUser(user.id, { active: false });
+      res.send({ user: updatedUser });
+    }
+    next(user ? {
+      name: "UnauthorizedUser",
+      message: "Forbidden user action - can't deactivate another user"
+    } : {
+      name: "UserNotFound",
+      message: "User does not exist"
+    })
+  } catch ({ name, message }) {
+    next({ name, message });
+  }
+});
 
 module.exports = router;
