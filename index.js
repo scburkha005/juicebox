@@ -16,22 +16,25 @@ app.use(express.json());
 
 app.use('/api', require('./api'));
 
+
+//Error handling: 500 errors
+app.use(({ name, message }, req, res, next) => {
+  res.send({
+    name,
+    message
+  });
+});
+
+//Error handling: 404 errors
+app.use((req, res, next) => {
+  res.status(404).send({
+    name: "Path Not Found",
+    message: "Page Not Found"
+  });
+});
+
+
+
 app.get('/', (req, res, next) => {
   res.send('This is the home page');
 });
-
-// app.get('/background/:color', (req, res, next) => {
-//   res.send(`
-//     <body style="background: ${ req.params.color };">
-//       <h1>Hello World</h1>
-//     </body>
-//   `);
-// });
-
-// app.get('/add/:first/to/:second', (req, res, next) => {
-//   res.send(`
-//   <h1> ${ req.params.first } + ${ req.params.second } = ${
-//     Number(req.params.first) + Number(req.params.second)}
-//   </h1>
-//    `);
-// });

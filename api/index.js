@@ -35,7 +35,7 @@ router.use(async (req, res, next) => {
       message: `Authorization token must start with ${prefix}`
     });
   }
-})
+});
 
 router.use((req, res, next) => {
   if (req.user) {
@@ -50,12 +50,5 @@ router.use('/users', require('./users'));
 router.use('/posts', require('./posts'));
 router.use('/tags', require('./tags'));
 
-//Error handling
-router.use(({ name, message }, req, res, next) => {
-  res.send({
-    name,
-    message
-  });
-});
 
 module.exports = router;
