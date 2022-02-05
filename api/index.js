@@ -20,9 +20,7 @@ router.use(async (req, res, next) => {
     // [Bearer, tpoisdj.pdsoifj.asdpoifap]
     const [ , token] = auth.split(' ');
     try {
-      console.log(token)
       const { id } = jwt.verify(token, JWT_SECRET)
-      console.log('id', id)
 
       if (id) {
         req.user = await getUserById(id);
@@ -35,7 +33,7 @@ router.use(async (req, res, next) => {
     next({
       name: 'AuthorizationHeaderError',
       message: `Authorization token must start with ${prefix}`
-    })
+    });
   }
 })
 
