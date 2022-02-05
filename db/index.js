@@ -57,6 +57,10 @@ const createUser = async ({ username, password, name, location }) => {
 
 //Helper function - createPost and updatePost
 const createTag = async (tag) => {
+  //tag is not an array, its a string = ''
+  if (tag.length === 0) {
+    return;
+  }
   try {
     const { rows: [newTag] } = await client.query(`
       INSERT INTO tags(name)
@@ -119,10 +123,15 @@ const createPost = async ({id, title, content, tags}) => {
       RETURNING *;
     `, [id, title, content])
     //create new tags if they don't exist
-    const tagList = await Promise.all(tags.map(createTag));
-    //returns post w all information added
-    return await addTagsToPost(post.id, tagList)
+    // [''] => createTag('')
+    if (tags) {
+      const tagList = await Promise.all(tags.map(createTag));
+      //returns post w all information added
+      return await addTagsToPost(post.id, tagList);
+    }
+    return await getPostById(post.id);
   } catch (err) {
+    console.error(err);
     throw err;
   }
 }
@@ -267,10 +276,10 @@ const getUserById = async (userId) => {
       return;
     }
 
-    user.posts = await getPostsByUser(userId);
-    // const userWithPosts = {...user, userPosts};
+    userPosts = await getPostsByUser(userId);
+    const userWithPosts = {...user, userPosts};
 
-    return user;
+    return userWithPosts;
   } catch (err) {
     throw err;
   }
@@ -316,5 +325,6 @@ module.exports = {
   getUserById,
   getPostsByTagName,
   getAllTags,
-  getUserByUsername
+  getUserByUsername,
+  getPostById
 }

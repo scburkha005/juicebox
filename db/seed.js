@@ -66,7 +66,7 @@ const createTables = async () => {
       
       CREATE TABLE posts (
         id SERIAL PRIMARY KEY,
-        "authorId" INTEGER REFERENCES users(id) NOT NULL,
+        "authorId" INTEGER REFERENCES users(id),
         title varchar(255) NOT NULL,
         content TEXT NOT NULL,
         active BOOLEAN DEFAULT true
