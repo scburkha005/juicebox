@@ -114,4 +114,29 @@ router.delete('/:userId', requireUser, async (req, res, next) => {
   }
 });
 
+//PATCH /api/users/:userId
+router.patch('/:userId', requireUser, async (req, res, next) => {
+  const { userId } = req.params;
+  try {
+    const user = await getUserById(userId);
+    
+    if (!user) {
+      next({
+        name: "UserNotFound",
+        message: "User does not exist"
+      });
+    } else if (user.id !== req.user.id) {
+      next({
+        name: "UnauthorizedUser",
+        message: "Forbidden user action - can't deactivate another user"
+      });
+    } else {
+        const updatedUser = await updateUser(user.id, { active: true });
+        res.send({ user: updatedUser });
+    }
+  } catch ({ name, message }) {
+      next({ name, message });
+  }
+})
+
 module.exports = router;
