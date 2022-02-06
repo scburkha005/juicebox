@@ -5,7 +5,7 @@ const morgan = require('morgan');
 
 const { client } = require('./db');
 
-const { PORT } = process.env;
+const { PORT = 3000 } = process.env;
 app.listen(PORT, () => {
   client.connect();
   console.log(`The server listening on http://localhost:${PORT}`);
